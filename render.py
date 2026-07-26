@@ -223,7 +223,7 @@ def hero(d, c, uid="H"):
   <text x="{tx}" y="152" font-family="{SANS}" font-size="13.5" fill="{c["dim"]}">
     Consulting engineering by day.</text>
   <text x="{tx}" y="172" font-family="{SANS}" font-size="13.5" fill="{c["dim"]}">
-    Self-hosted infrastructure by night.</text>
+    Software engineering by night.</text>
 </g>
 <g class="fi d3">
   <text x="{tx}" y="205" font-family="{MONO}" font-size="10.5" letter-spacing="2.2"
