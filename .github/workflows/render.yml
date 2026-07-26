@@ -1,0 +1,42 @@
+name: render profile cards
+
+on:
+  schedule:
+    # Hourly: the frog's palette follows the sun over Greenville, so the mark
+    # needs to be redrawn as the phase changes. GitHub's scheduler is
+    # best-effort and often runs late, which is fine at this granularity.
+    - cron: "17 * * * *"
+  push:
+    branches: [main]
+    paths: [render.py, frogmark.py, .github/workflows/render.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Render cards
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python render.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets README.md
+          git diff --staged --quiet || git commit -m "render: refresh profile cards"
+          git push
