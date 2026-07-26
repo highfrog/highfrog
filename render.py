@@ -114,8 +114,10 @@ def fetch():
     top = sorted(langs.items(), key=lambda kv: -kv[1]["size"])[:5]
 
     phase, elev = frogmark.solar_phase(now)
+    wx = frogmark.weather()
     return {
         "phase": phase,
+        "weather": wx,
         "phase_label": frogmark.PALETTES[phase]["label"],
         "sun_elevation": round(elev, 1),
         "contributions": contrib["contributionCalendar"]["totalContributions"],
@@ -164,7 +166,17 @@ def svg(w, h, body):
 
 # ---------------------------------------------------------------- cards
 
-def hero(d, c):
+def conditions(d):
+    """Caption under the mark: phase, temperature, sky."""
+    bits = [d["phase_label"]]
+    if d["weather"]["temp"] is not None:
+        bits.append(f'{d["weather"]["temp"]}\u00b0F')
+    if d["weather"]["label"]:
+        bits.append(d["weather"]["label"])
+    return " · ".join(bits)
+
+
+def hero(d, c, uid="H"):
     h = 236
     readouts = [("NODES", "2"), ("GUESTS", "9"), ("VLANS", "5")]
     panel = []
@@ -193,9 +205,10 @@ def hero(d, c):
                    to {{ opacity: 1; transform: translateY(0) }} }}
   @media (prefers-reduced-motion: reduce) {{ .fi {{ animation: none; opacity: 1 }} }}
 </style>
-<g class="fi d1">{frogmark.mark(d["phase"], "H", size=150, x=40, y=40)}
+<g class="fi d1">{frogmark.mark(d["phase"], uid, size=150, x=40, y=40,
+                                 weather_kind=d["weather"]["kind"])}
   <text x="115" y="212" text-anchor="middle" font-family="{MONO}" font-size="9"
-        letter-spacing="1.6" fill="{c["dim"]}">{d["phase_label"]} · GREENVILLE</text>
+        letter-spacing="1.4" fill="{c["dim"]}">{esc(conditions(d))}</text>
 </g>
 <g class="fi d1">
   <text x="{tx}" y="80" font-family="{MONO}" font-size="36" font-weight="700"
@@ -308,7 +321,8 @@ def main():
     text = re.sub(r"(<!-- updated: )[^>]*( -->)", rf"\g<1>{d['updated']}\g<2>", text)
     readme.write_text(text)
     print(f"rendered {len(written)} cards · v={stamp} · phase={d['phase']} "
-          f"(sun {d['sun_elevation']}°) · {d['contributions']} contributions · "
+          f"(sun {d['sun_elevation']}°) · weather={d['weather']['kind']} "
+          f"({d['weather']['label'] or 'n/a'}) · {d['contributions']} contributions · "
           f"{d['stars']} stars")
 
 

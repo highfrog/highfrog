@@ -4,10 +4,44 @@
 Geometry lives in 0..1 space so the caller can scale it to any size. Colours are
 driven by solar elevation, so the mark tracks real daylight rather than clock time.
 """
+import json
 import math
+import urllib.request
 
 # Greenville, SC
 LAT, LON = 34.8526, -82.3940
+
+# WMO weather codes → overlay. Anything unmapped falls through to "clear", so a new
+# or odd code degrades to no overlay rather than breaking the render.
+WMO = {
+    0: ("clear", "CLEAR"),
+    1: ("clear", "CLEAR"), 2: ("cloud", "PARTLY"), 3: ("cloud", "OVERCAST"),
+    45: ("fog", "FOG"), 48: ("fog", "FOG"),
+    51: ("rain", "DRIZZLE"), 53: ("rain", "DRIZZLE"), 55: ("rain", "DRIZZLE"),
+    56: ("rain", "FRZ DRIZZLE"), 57: ("rain", "FRZ DRIZZLE"),
+    61: ("rain", "RAIN"), 63: ("rain", "RAIN"), 65: ("rain", "HEAVY RAIN"),
+    66: ("rain", "FRZ RAIN"), 67: ("rain", "FRZ RAIN"),
+    71: ("snow", "SNOW"), 73: ("snow", "SNOW"), 75: ("snow", "HEAVY SNOW"),
+    77: ("snow", "SNOW GRAINS"),
+    80: ("rain", "SHOWERS"), 81: ("rain", "SHOWERS"), 82: ("rain", "HEAVY SHOWERS"),
+    85: ("snow", "SNOW SHOWERS"), 86: ("snow", "SNOW SHOWERS"),
+    95: ("storm", "STORM"), 96: ("storm", "STORM"), 99: ("storm", "STORM"),
+}
+
+
+def weather():
+    """Current conditions over Greenville. Never raises — the frog renders regardless."""
+    url = ("https://api.open-meteo.com/v1/forecast"
+           f"?latitude={LAT}&longitude={LON}"
+           "&current=temperature_2m,weather_code&temperature_unit=fahrenheit")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "highfrog-profile"})
+        with urllib.request.urlopen(req, timeout=12) as r:
+            cur = json.load(r)["current"]
+        kind, label = WMO.get(int(cur["weather_code"]), ("clear", "CLEAR"))
+        return {"kind": kind, "label": label, "temp": round(cur["temperature_2m"])}
+    except Exception:
+        return {"kind": "clear", "label": "", "temp": None}
 
 PALETTES = {
     "dawn": dict(
@@ -107,7 +141,80 @@ def _mirror(poly):
 INSET = 0.46 / 0.605
 
 
-def mark(phase, uid, size=1.0, x=0.0, y=0.0, inset=1.0):
+def overlay(kind, uid):
+    """Weather drawn over the mark, clipped to the ground circle.
+
+    Every position is deterministic — random drops would rewrite the SVG on each
+    run and the Action would commit hourly with nothing actually changed.
+    """
+    if kind == "clear":
+        return ""
+
+    css, el = [], []
+    tint = {"rain": ("#0C2340", .22), "storm": ("#0A1A33", .28),
+            "cloud": ("#94A3B8", .14), "fog": ("#CBD5E1", .24),
+            "snow": ("#E2E8F0", .12)}.get(kind)
+    if tint:
+        el.append(f'<circle cx=".5" cy=".5" r=".5" fill="{tint[0]}" opacity="{tint[1]}"/>')
+
+    if kind in ("rain", "storm"):
+        n = 22 if kind == "storm" else 18
+        css.append(f".rn{uid}{{animation:fall{uid} .8s linear infinite}}"
+                   f"@keyframes fall{uid}{{from{{transform:translate(0,-.34px)}}"
+                   f"to{{transform:translate(.06px,.36px)}}}}")
+        for i in range(n):
+            px = 0.03 + ((i * 0.1379) % 0.94)
+            py = 0.08 + ((i * 0.2411) % 0.72)
+            el.append(f'<line x1="{px:.3f}" y1="{py:.3f}" x2="{px - .022:.3f}" '
+                      f'y2="{py + .085:.3f}" stroke="#BAE6FD" stroke-width=".009" '
+                      f'stroke-linecap="round" opacity=".62" class="rn{uid}" '
+                      f'style="animation-delay:-{i * 0.043:.3f}s"/>')
+
+    if kind == "storm":
+        css.append(f".bolt{uid}{{animation:flash{uid} 4s steps(1,end) infinite}}"
+                   f"@keyframes flash{uid}{{0%,88%{{opacity:0}}90%,93%{{opacity:.95}}"
+                   f"95%{{opacity:.3}}97%,100%{{opacity:0}}}}")
+        el.append(f'<polygon points="0.60,0.10 0.47,0.40 0.55,0.40 0.44,0.68 '
+                  f'0.66,0.34 0.57,0.34 0.68,0.10" fill="#FDE047" '
+                  f'class="bolt{uid}"/>')
+
+    if kind == "snow":
+        css.append(f".sn{uid}{{animation:drift{uid} 3.4s linear infinite}}"
+                   f"@keyframes drift{uid}{{from{{transform:translate(-.03px,-.36px)}}"
+                   f"to{{transform:translate(.03px,.38px)}}}}")
+        for i in range(16):
+            px = 0.04 + ((i * 0.1811) % 0.92)
+            py = 0.06 + ((i * 0.3121) % 0.78)
+            r = 0.008 + (i % 3) * 0.003
+            el.append(f'<circle cx="{px:.3f}" cy="{py:.3f}" r="{r:.3f}" fill="#F8FAFC" '
+                      f'opacity=".85" class="sn{uid}" '
+                      f'style="animation-delay:-{i * 0.21:.2f}s"/>')
+
+    if kind == "fog":
+        css.append(f".fg{uid}{{animation:slide{uid} 11s ease-in-out infinite alternate}}"
+                   f"@keyframes slide{uid}{{from{{transform:translateX(-.05px)}}"
+                   f"to{{transform:translateX(.05px)}}}}")
+        for i, (fy, op) in enumerate(((0.34, .28), (0.50, .34), (0.66, .24), (0.80, .18))):
+            el.append(f'<rect x="-.1" y="{fy:.2f}" width="1.2" height="0.052" rx="0.026" '
+                      f'fill="#E2E8F0" opacity="{op}" class="fg{uid}" '
+                      f'style="animation-delay:-{i * 1.7:.1f}s"/>')
+
+    if kind == "cloud":
+        css.append(f".cl{uid}{{animation:roll{uid} 14s ease-in-out infinite alternate}}"
+                   f"@keyframes roll{uid}{{from{{transform:translateX(-.04px)}}"
+                   f"to{{transform:translateX(.04px)}}}}")
+        for cx_, cy_, r in ((0.26, 0.15, 0.075), (0.36, 0.12, 0.095),
+                            (0.48, 0.15, 0.070), (0.70, 0.19, 0.062)):
+            el.append(f'<circle cx="{cx_}" cy="{cy_}" r="{r}" fill="#E2E8F0" '
+                      f'opacity=".42" class="cl{uid}"/>')
+
+    style = f"<style>{''.join(css)}</style>" if css else ""
+    return (f'<defs><clipPath id="wc{uid}">'
+            f'<circle cx=".5" cy=".5" r=".5"/></clipPath></defs>{style}'
+            f'<g clip-path="url(#wc{uid})">{"".join(el)}</g>')
+
+
+def mark(phase, uid, size=1.0, x=0.0, y=0.0, inset=1.0, weather_kind="clear"):
     """SVG group for the frog mark, scaled to `size` and placed at (x, y).
 
     `phase` is a key in PALETTES, or "signature" for the fixed identity mark.
@@ -160,4 +267,5 @@ def mark(phase, uid, size=1.0, x=0.0, y=0.0, inset=1.0):
         inner = (f'<g transform="translate(.5 .5) scale({inset:.5f}) '
                  f'translate(-.5 -.5)">{inner}</g>')
     return (f'<defs>{"".join(d)}</defs>'
-            f'<g transform="translate({x} {y}) scale({size})">{ground_el}{inner}</g>')
+            f'<g transform="translate({x} {y}) scale({size})">'
+            f'{ground_el}{inner}{overlay(weather_kind, uid)}</g>')
