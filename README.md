@@ -1,8 +1,8 @@
-<!-- updated: 2026-09-06 17:00 UTC -->
+<!-- updated: 2026-09-06 19:08 UTC -->
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/hero-dark.svg?v=5e265748">
-  <img alt="highfrog — Reedy Lab. Mechanical Engineer, P.E. in Greenville, SC. Consulting engineering by day, software engineering by night." src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/hero-light.svg?v=5e265748">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/hero-dark.svg?v=bdfb05d1">
+  <img alt="highfrog — Reedy Lab. Mechanical Engineer, P.E. in Greenville, SC. Consulting engineering by day, software engineering by night." src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/hero-light.svg?v=bdfb05d1">
 </picture>
 
 I'm a licensed **Professional Engineer** working in consulting engineering — mechanical
@@ -13,8 +13,8 @@ of what I build ever since.
 Everything here comes out of that: tools I needed, built properly, then released.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/stats-dark.svg?v=5e265748">
-  <img alt="Contribution and language statistics" src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/stats-light.svg?v=5e265748">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/stats-dark.svg?v=bdfb05d1">
+  <img alt="Contribution and language statistics" src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/stats-light.svg?v=bdfb05d1">
 </picture>
 
 ### Reedy Lab
@@ -24,8 +24,8 @@ something I needed running in my own lab, and gets released once it's good enoug
 to someone else. Self-hosted infrastructure is what's public today.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/suite-dark.svg?v=5e265748">
-  <img alt="Reedy Lab projects and their star counts" src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/suite-light.svg?v=5e265748">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/suite-dark.svg?v=bdfb05d1">
+  <img alt="Reedy Lab projects and their star counts" src="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/suite-light.svg?v=bdfb05d1">
 </picture>
 
 <div align="center"><a href="https://www.reedylab.com"><b>www.reedylab.com</b></a></div>
