@@ -1,4 +1,4 @@
-<!-- updated: 2026-09-25 18:33 UTC -->
+<!-- updated: 2026-09-25 22:17 UTC -->
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/highfrog/highfrog/main/assets/hero-dark.svg?v=be3335bf">
